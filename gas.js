@@ -3,22 +3,11 @@ const API_URL = 'https://backend-klap.onrender.com';
 
 // Medios de pago (las claves coinciden con las del backend)
 const MEDIOS = {
-  transbank_mall: { nombre: 'Transbank (Mall)', pais: 'CL' },
-  transbank_plus: { nombre: 'Transbank (Plus)', pais: 'CL', autoWebpay: true }, // se presiona Webpay solo
-  klap:           { nombre: 'Klap',             pais: 'CL' },
-  pagonxt:        { nombre: 'Pagonxt',          pais: 'CL' },
-  izipay:         { nombre: 'Izipay',           pais: 'PE' },
-  niubiz:         { nombre: 'Niubiz',           pais: 'PE' }
+  transbank_mall: { nombre: 'Transbank (Mall)' },
+  transbank_plus: { nombre: 'Transbank (Plus)', autoWebpay: true }, // se presiona Webpay solo
+  klap:           { nombre: 'Klap' },
+  pagonxt:        { nombre: 'Pagonxt' }
 };
-
-// Configuración del campo de documento según el país
-const PAISES = {
-  PE: { label: 'N° de Cliente (DNI, 8 dígitos)', placeholder: '12345678', maxlength: 8, inputmode: 'numeric' },
-  CL: { label: 'N° de Cliente (RUT)', placeholder: '12.345.678-9', maxlength: 12, inputmode: 'text' }
-};
-
-const LOCALES = { CLP: 'es-CL', PEN: 'es-PE' };
-const DECIMALES = { CLP: 0, PEN: 2 };
 
 // Medio y modo vienen en la URL: gas.html?tienda=klap&modo=test
 const params = new URLSearchParams(window.location.search);
@@ -27,7 +16,6 @@ const modo = params.get('modo') === 'prod' ? 'prod' : 'test';
 const medio = Object.prototype.hasOwnProperty.call(MEDIOS, tienda) ? MEDIOS[tienda] : null;
 if (!medio) window.location.replace('index.html');
 
-const pais = medio ? medio.pais : 'CL';
 const etiquetaModo = modo === 'prod' ? 'PRODUCCIÓN' : 'TEST';
 
 const consultaForm = document.getElementById('consultaForm');
@@ -48,11 +36,10 @@ let cuentaActual = null;
 let scriptCargado = null; // promesa de carga de la librería (se carga una sola vez)
 
 // ---------- Configuración inicial de la página ----------
-const cfgPais = PAISES[pais];
-docLabel.textContent = cfgPais.label;
-inputDni.placeholder = cfgPais.placeholder;
-inputDni.maxLength = cfgPais.maxlength;
-inputDni.inputMode = cfgPais.inputmode;
+docLabel.textContent = 'N° de Cliente (RUT)';
+inputDni.placeholder = '12.345.678-9';
+inputDni.maxLength = 12;
+inputDni.inputMode = 'text';
 if (medio) {
   medioChip.textContent = `${medio.nombre} · ${etiquetaModo}`;
   btnPagar.textContent = `Pagar con ${medio.nombre}`;
@@ -61,13 +48,8 @@ if (modo === 'prod') medioChip.classList.add('prod');
 cambiarMedio.href = `index.html?modo=${modo}`;
 
 // ---------- Utilidades ----------
-function formatoMoneda(valor, moneda) {
-  return valor.toLocaleString(LOCALES[moneda] || 'es-CL', {
-    style: 'currency',
-    currency: moneda,
-    minimumFractionDigits: DECIMALES[moneda] ?? 0,
-    maximumFractionDigits: DECIMALES[moneda] ?? 0
-  });
+function formatoCLP(valor) {
+  return valor.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 }
 
 // Formato RUT chileno: xx.xxx.xxx-x (el último carácter es el dígito verificador, puede ser K)
@@ -78,13 +60,8 @@ function formatearRut(valor) {
   return `${cuerpo}-${limpio.slice(-1)}`;
 }
 
-function formatearDocumento(valor) {
-  if (pais === 'CL') return formatearRut(valor);
-  return valor.replace(/\D/g, '').slice(0, 8); // DNI Perú
-}
-
 inputDni.addEventListener('input', () => {
-  inputDni.value = formatearDocumento(inputDni.value);
+  inputDni.value = formatearRut(inputDni.value);
 });
 
 function mostrarFormulario() {
@@ -128,7 +105,7 @@ modalEl.addEventListener('hidden.bs.modal', resetPopup);
 // ---------- 1) Consultar deuda y abrir el popup ----------
 consultaForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const dni = formatearDocumento(inputDni.value.trim());
+  const dni = formatearRut(inputDni.value.trim());
   consultaMsg.textContent = 'Consultando…';
   consultaMsg.className = 'form-text mt-2';
   btnConsultar.disabled = true;
@@ -155,7 +132,7 @@ consultaForm.addEventListener('submit', async (e) => {
     document.getElementById('rPeriodo').textContent = data.periodo;
     document.getElementById('rVencimiento').textContent = data.vencimiento;
     document.getElementById('rMedio').textContent = `${data.medioPago} · ${etiquetaModo}`;
-    document.getElementById('rMonto').textContent = formatoMoneda(data.monto, data.moneda);
+    document.getElementById('rMonto').textContent = formatoCLP(data.monto);
     resetPopup();
     modal.show();
   } catch (err) {

@@ -18,35 +18,24 @@
   .modo-btn.activo[data-modo="prod"]{ background:var(--red); color:#fff; }
   .aviso-prod{ background:#fdecea; color:var(--red); border-radius:12px; padding:.6rem 1rem; font-weight:700; text-align:center; }
 
-  .pais{ font-weight:800; text-transform:uppercase; letter-spacing:.06em; font-size:.9rem; margin:2rem 0 .8rem; }
+  .subtitulo{ text-align:center; font-weight:700; margin:2rem 0 1.2rem; }
 
-  /* Cuadros con bandera */
+  /* Cuadros con logo */
   .medio{
     width:100%; background:#fff; border:3px solid #e6e9f2; border-radius:20px; padding:1rem;
     text-align:center; cursor:pointer; transition:transform .15s, border-color .15s, box-shadow .15s;
   }
   .medio:hover{ transform:translateY(-3px); border-color:var(--navy); box-shadow:0 10px 24px rgba(13,27,76,.12); }
-  .bandera{ display:block; width:100%; border-radius:12px; overflow:hidden; border:1px solid #d8deea; }
-  .bandera svg{ display:block; width:100%; height:auto; }
+  .logo{
+    display:flex; align-items:center; justify-content:center; height:110px; padding:.8rem;
+    border-radius:12px; border:1px solid #e6e9f2; background:#fff;
+  }
+  .logo img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .logo-fallback{ display:none; align-items:center; justify-content:center; font-weight:900; font-size:1.3rem; color:var(--navy); }
   .nombre{ display:block; margin-top:.8rem; font-weight:800; color:var(--navy); }
 </style>
 </head>
 <body>
-
-<!-- Banderas (SVG, para que se vean igual en todos los sistemas) -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="flag-cl" viewBox="0 0 3 2">
-    <rect width="3" height="2" fill="#fff"/>
-    <rect y="1" width="3" height="1" fill="#d52b1e"/>
-    <rect width="1" height="1" fill="#0039a6"/>
-    <polygon fill="#fff" points="0.5,0.2 0.5674,0.4073 0.7853,0.4073 0.609,0.5354 0.6763,0.7427 0.5,0.6146 0.3237,0.7427 0.391,0.5354 0.2147,0.4073 0.4326,0.4073"/>
-  </symbol>
-  <symbol id="flag-pe" viewBox="0 0 3 2">
-    <rect width="3" height="2" fill="#fff"/>
-    <rect width="1" height="2" fill="#d91023"/>
-    <rect x="2" width="1" height="2" fill="#d91023"/>
-  </symbol>
-</svg>
 
 <div class="barra">
   <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -61,46 +50,43 @@
 <main class="container pb-5">
   <div id="avisoProd" class="aviso-prod mt-3 d-none">Modo PRODUCCIÓN: los pagos serán reales.</div>
 
-  <div class="pais">Chile</div>
+  <p class="subtitulo">Elige tu medio de pago</p>
+
   <div class="row g-3">
     <div class="col-6 col-md-3">
       <button type="button" class="medio" data-tienda="transbank_mall">
-        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="logo">
+          <img src="logos/transbank.png" alt="Transbank" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span class="logo-fallback">Transbank</span>
+        </span>
         <span class="nombre">Transbank (Mall)</span>
       </button>
     </div>
     <div class="col-6 col-md-3">
       <button type="button" class="medio" data-tienda="transbank_plus">
-        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="logo">
+          <img src="logos/transbank.png" alt="Transbank" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span class="logo-fallback">Transbank</span>
+        </span>
         <span class="nombre">Transbank (Plus)</span>
       </button>
     </div>
     <div class="col-6 col-md-3">
       <button type="button" class="medio" data-tienda="klap">
-        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="logo">
+          <img src="logos/klap.png" alt="Klap" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span class="logo-fallback">Klap</span>
+        </span>
         <span class="nombre">Klap</span>
       </button>
     </div>
     <div class="col-6 col-md-3">
       <button type="button" class="medio" data-tienda="pagonxt">
-        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="logo">
+          <img src="logos/pagonxt.png" alt="Pagonxt" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span class="logo-fallback">Pagonxt</span>
+        </span>
         <span class="nombre">Pagonxt</span>
-      </button>
-    </div>
-  </div>
-
-  <div class="pais">Perú</div>
-  <div class="row g-3">
-    <div class="col-6 col-md-3">
-      <button type="button" class="medio" data-tienda="izipay">
-        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Perú"><use href="#flag-pe"/></svg></span>
-        <span class="nombre">Izipay</span>
-      </button>
-    </div>
-    <div class="col-6 col-md-3">
-      <button type="button" class="medio" data-tienda="niubiz">
-        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Perú"><use href="#flag-pe"/></svg></span>
-        <span class="nombre">Niubiz</span>
       </button>
     </div>
   </div>
