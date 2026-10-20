@@ -3,131 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Energía Demo - Pago fácil</title>
+<title>Pagos · Elige tu medio de pago</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
 <style>
-  :root{ --navy:#0d1b4c; --green:#00b58a; --purple:#5b2a9e; }
-  body{ background:#fff; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  :root{ --navy:#0d1b4c; --green:#00b58a; --red:#c0392b; }
+  body{ background:#fff; color:var(--navy); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
 
-  /* Barra superior */
-  .topbar{ background:var(--navy); color:#fff; font-size:.9rem; font-weight:600; }
-  .topbar a{ color:#fff; text-decoration:none; margin-right:1.25rem; }
-  .topbar .fono{ font-size:1.25rem; font-weight:800; }
+  /* Barra superior con el selector de modo */
+  .barra{ border-bottom:1px solid #e6e9f2; padding:.9rem 0; }
+  .titulo{ font-weight:900; font-size:1.25rem; margin:0; }
+  .modo{ display:inline-flex; background:#eef1f7; border-radius:14px; padding:4px; gap:4px; }
+  .modo-btn{ border:0; background:transparent; color:var(--navy); font-weight:800; padding:.55rem 1.3rem; border-radius:10px; }
+  .modo-btn.activo[data-modo="test"]{ background:var(--green); color:#fff; }
+  .modo-btn.activo[data-modo="prod"]{ background:var(--red); color:#fff; }
+  .aviso-prod{ background:#fdecea; color:var(--red); border-radius:12px; padding:.6rem 1rem; font-weight:700; text-align:center; }
 
-  /* Menú */
-  .brand{ font-size:2rem; font-weight:900; color:var(--navy); line-height:1; }
-  .brand small{ display:block; color:var(--green); font-size:1.1rem; font-weight:800; }
-  .menu a{ color:var(--navy); font-weight:700; text-decoration:none; font-size:.9rem; margin:0 .6rem; }
-  .menu .btn-menu{ background:var(--green); color:#fff; padding:.7rem 1.1rem; border-radius:12px; }
-  .menu .btn-contacto{ background:var(--navy); color:#fff; padding:.7rem 1.1rem; border-radius:12px; }
+  .pais{ font-weight:800; text-transform:uppercase; letter-spacing:.06em; font-size:.9rem; margin:2rem 0 .8rem; }
 
-  /* Hero */
-  .hero{
-    border-radius:22px; padding:2.2rem 1.6rem 2.4rem;
-    background:linear-gradient(120deg,#e9edf3 0%,#d9dfe9 45%,#c9d2e3 100%);
-    box-shadow:0 14px 40px rgba(13,27,76,.15);
-  }
-  .hero h1{ font-size:2.2rem; font-weight:900; color:var(--navy); text-align:center; margin:0; }
-  .hero .sub{ text-align:center; color:#4a5575; margin:.4rem 0 1.8rem; }
-
-  .pais{ font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.06em; font-size:.85rem; margin:1.2rem 0 .6rem; }
+  /* Cuadros con bandera */
   .medio{
-    width:100%; height:100%; border:3px solid transparent; background:#fff; border-radius:18px;
-    padding:1.2rem .8rem; text-align:center; cursor:pointer;
-    box-shadow:0 8px 24px rgba(13,27,76,.10); transition:transform .15s, border-color .15s;
+    width:100%; background:#fff; border:3px solid #e6e9f2; border-radius:20px; padding:1rem;
+    text-align:center; cursor:pointer; transition:transform .15s, border-color .15s, box-shadow .15s;
   }
-  .medio:hover{ transform:translateY(-3px); }
-  .medio.activo{ border-color:var(--navy); }
-  .medio .logo{
-    width:56px; height:56px; border-radius:16px; margin:0 auto .6rem; color:#fff; font-weight:900; font-size:1.5rem;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .medio .nombre{ font-weight:800; color:var(--navy); }
-
-  /* Panel de documento */
-  .doc-panel{
-    max-width:460px; margin:1.8rem auto 0; background:#fff; border-radius:22px; padding:1.5rem 1.6rem;
-    box-shadow:0 10px 30px rgba(13,27,76,.15);
-  }
-  .doc-panel h2{ font-weight:800; color:var(--navy); font-size:1.25rem; margin:0 0 .8rem; }
-  .doc-panel label{ font-weight:700; color:var(--navy); font-size:.9rem; }
-  .doc-panel input{ border:3px solid var(--navy); border-radius:12px; height:48px; }
-  .btn-pagar{ background:var(--navy); color:#fff; font-weight:800; border-radius:24px; padding:.6rem 1.6rem; height:48px; }
-  .btn-pagar:hover{ background:#081338; color:#fff; }
+  .medio:hover{ transform:translateY(-3px); border-color:var(--navy); box-shadow:0 10px 24px rgba(13,27,76,.12); }
+  .bandera{ display:block; width:100%; border-radius:12px; overflow:hidden; border:1px solid #d8deea; }
+  .bandera svg{ display:block; width:100%; height:auto; }
+  .nombre{ display:block; margin-top:.8rem; font-weight:800; color:var(--navy); }
 </style>
 </head>
 <body>
 
-<div class="topbar py-2">
-  <div class="container d-flex justify-content-between align-items-center">
-    <div><a href="#">Acerca de nosotros</a><a href="#">Noticias</a></div>
-    <div class="d-none d-md-block"><a href="#">Emergencias</a><a href="#">Reposición</a><span class="fono">600 600 0000</span></div>
+<!-- Banderas (SVG, para que se vean igual en todos los sistemas) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="flag-cl" viewBox="0 0 3 2">
+    <rect width="3" height="2" fill="#fff"/>
+    <rect y="1" width="3" height="1" fill="#d52b1e"/>
+    <rect width="1" height="1" fill="#0039a6"/>
+    <polygon fill="#fff" points="0.5,0.2 0.5674,0.4073 0.7853,0.4073 0.609,0.5354 0.6763,0.7427 0.5,0.6146 0.3237,0.7427 0.391,0.5354 0.2147,0.4073 0.4326,0.4073"/>
+  </symbol>
+  <symbol id="flag-pe" viewBox="0 0 3 2">
+    <rect width="3" height="2" fill="#fff"/>
+    <rect width="1" height="2" fill="#d91023"/>
+    <rect x="2" width="1" height="2" fill="#d91023"/>
+  </symbol>
+</svg>
+
+<div class="barra">
+  <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h1 class="titulo">Pagos en línea</h1>
+    <div class="modo" role="group" aria-label="Modo">
+      <button type="button" class="modo-btn activo" data-modo="test" aria-pressed="true">Test</button>
+      <button type="button" class="modo-btn" data-modo="prod" aria-pressed="false">Producción</button>
+    </div>
   </div>
 </div>
 
-<header class="container py-3 d-flex flex-wrap justify-content-between align-items-center">
-  <div class="brand">ENERGÍA<small>+demo</small></div>
-  <nav class="menu d-none d-lg-flex align-items-center">
-    <a href="#" class="btn-menu">MI CUENTA</a>
-    <a href="#">QUIERO GAS NATURAL</a>
-    <a href="#">LLAME ANTES DE EXCAVAR</a>
-    <a href="#">SERVICIO TÉCNICO</a>
-    <a href="#">CATÁLOGO</a>
-    <a href="#" class="btn-contacto">CONTACTO</a>
-  </nav>
-</header>
-
 <main class="container pb-5">
-  <section class="hero">
-    <h1>PAGO FÁCIL</h1>
-    <p class="sub">Elige tu medio de pago</p>
+  <div id="avisoProd" class="aviso-prod mt-3 d-none">Modo PRODUCCIÓN: los pagos serán reales.</div>
 
-    <div class="pais">🇵🇪 Perú</div>
-    <div class="row g-3" id="medios-pe">
-      <div class="col-6 col-md-4 col-lg-3">
-        <button type="button" class="medio" data-tienda="izipay" data-pais="PE">
-          <div class="logo" style="background:#e5007e">I</div><div class="nombre">Izipay</div>
-        </button>
-      </div>
-      <div class="col-6 col-md-4 col-lg-3">
-        <button type="button" class="medio" data-tienda="niubiz" data-pais="PE">
-          <div class="logo" style="background:#00a1e0">N</div><div class="nombre">Niubiz</div>
-        </button>
-      </div>
+  <div class="pais">Chile</div>
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <button type="button" class="medio" data-tienda="transbank_mall">
+        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="nombre">Transbank (Mall)</span>
+      </button>
     </div>
+    <div class="col-6 col-md-3">
+      <button type="button" class="medio" data-tienda="transbank_plus">
+        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="nombre">Transbank (Plus)</span>
+      </button>
+    </div>
+    <div class="col-6 col-md-3">
+      <button type="button" class="medio" data-tienda="klap">
+        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="nombre">Klap</span>
+      </button>
+    </div>
+    <div class="col-6 col-md-3">
+      <button type="button" class="medio" data-tienda="pagonxt">
+        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Chile"><use href="#flag-cl"/></svg></span>
+        <span class="nombre">Pagonxt</span>
+      </button>
+    </div>
+  </div>
 
-    <div class="pais">🇨🇱 Chile</div>
-    <div class="row g-3" id="medios-cl">
-      <div class="col-6 col-md-4 col-lg-3">
-        <button type="button" class="medio" data-tienda="transbank" data-pais="CL">
-          <div class="logo" style="background:#5b2a9e">T</div><div class="nombre">Transbank</div>
-        </button>
-      </div>
-      <div class="col-6 col-md-4 col-lg-3">
-        <button type="button" class="medio" data-tienda="klap" data-pais="CL">
-          <div class="logo" style="background:#00b58a">K</div><div class="nombre">Klap</div>
-        </button>
-      </div>
-      <div class="col-6 col-md-4 col-lg-3">
-        <button type="button" class="medio" data-tienda="getnet" data-pais="CL">
-          <div class="logo" style="background:#e30613">G</div><div class="nombre">Getnet</div>
-        </button>
-      </div>
+  <div class="pais">Perú</div>
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <button type="button" class="medio" data-tienda="izipay">
+        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Perú"><use href="#flag-pe"/></svg></span>
+        <span class="nombre">Izipay</span>
+      </button>
     </div>
-
-    <!-- Se muestra al elegir un medio de pago -->
-    <div class="doc-panel d-none" id="docPanel">
-      <h2 id="docTitulo">Paga tu cuenta</h2>
-      <form id="consultaForm">
-        <label for="dni" class="mb-1" id="docLabel">Documento</label>
-        <div class="d-flex gap-2">
-          <input type="text" id="dni" class="form-control" autocomplete="off" required>
-          <button class="btn btn-pagar" type="submit" id="btnConsultar">Pagar</button>
-        </div>
-        <div id="consultaMsg" class="form-text mt-2"></div>
-      </form>
+    <div class="col-6 col-md-3">
+      <button type="button" class="medio" data-tienda="niubiz">
+        <span class="bandera"><svg viewBox="0 0 3 2" role="img" aria-label="Perú"><use href="#flag-pe"/></svg></span>
+        <span class="nombre">Niubiz</span>
+      </button>
     </div>
-  </section>
+  </div>
 </main>
 
 <script src="app.js"></script>
