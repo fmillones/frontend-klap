@@ -5,6 +5,18 @@ const consultaForm = document.getElementById('consultaForm');
 const consultaMsg = document.getElementById('consultaMsg');
 const btnConsultar = document.getElementById('btnConsultar');
 const inputDni = document.getElementById('dni');
+const docPanel = document.getElementById('docPanel');
+const docTitulo = document.getElementById('docTitulo');
+const docLabel = document.getElementById('docLabel');
+
+// Configuración del campo de documento según el país
+const PAISES = {
+  PE: { label: 'DNI (8 dígitos)', placeholder: '12345678', maxlength: 8, inputmode: 'numeric' },
+  CL: { label: 'RUT (xx.xxx.xxx-x)', placeholder: '12.345.678-9', maxlength: 12, inputmode: 'text' }
+};
+
+let tiendaActual = null;
+let paisActual = null;
 
 // Formato RUT chileno: xx.xxx.xxx-x (el último carácter es el dígito verificador, puede ser K)
 function formatearRut(valor) {
@@ -14,14 +26,46 @@ function formatearRut(valor) {
   return `${cuerpo}-${limpio.slice(-1)}`;
 }
 
+function formatearDocumento(valor) {
+  if (paisActual === 'CL') return formatearRut(valor);
+  return valor.replace(/\D/g, '').slice(0, 8); // DNI Perú
+}
+
+// Elegir un medio de pago
+document.querySelectorAll('.medio').forEach((card) => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.medio').forEach((c) => c.classList.remove('activo'));
+    card.classList.add('activo');
+
+    const cambioPais = paisActual !== card.dataset.pais;
+    tiendaActual = card.dataset.tienda;
+    paisActual = card.dataset.pais;
+
+    const cfg = PAISES[paisActual];
+    docLabel.textContent = cfg.label;
+    inputDni.placeholder = cfg.placeholder;
+    inputDni.maxLength = cfg.maxlength;
+    inputDni.inputMode = cfg.inputmode;
+    docTitulo.textContent = 'Pagar con ' + card.querySelector('.nombre').textContent;
+    if (cambioPais) inputDni.value = '';
+    consultaMsg.textContent = '';
+
+    docPanel.classList.remove('d-none');
+    docPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    inputDni.focus({ preventScroll: true });
+  });
+});
+
 inputDni.addEventListener('input', () => {
-  inputDni.value = formatearRut(inputDni.value);
+  inputDni.value = formatearDocumento(inputDni.value);
 });
 
 // Consulta la deuda y, si existe, abre la página de pago
 consultaForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const dni = formatearRut(inputDni.value);
+  if (!tiendaActual) return;
+
+  const dni = formatearDocumento(inputDni.value);
   consultaMsg.textContent = 'Consultando…';
   consultaMsg.className = 'form-text mt-2';
   btnConsultar.disabled = true;
@@ -30,7 +74,7 @@ consultaForm.addEventListener('submit', async (e) => {
     const r = await fetch(`${API_URL}/api/consulta-deuda`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dni })
+      body: JSON.stringify({ dni, tienda: tiendaActual })
     });
     const data = await r.json();
 
@@ -41,7 +85,8 @@ consultaForm.addEventListener('submit', async (e) => {
       return;
     }
 
-    window.location.href = 'pago.html?dni=' + encodeURIComponent(dni);
+    window.location.href =
+      'pago.html?dni=' + encodeURIComponent(dni) + '&tienda=' + encodeURIComponent(tiendaActual);
   } catch (err) {
     consultaMsg.textContent = 'Error de conexión con el servidor.';
     consultaMsg.className = 'form-text mt-2 text-danger';

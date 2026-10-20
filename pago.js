@@ -4,28 +4,38 @@ const API_URL = 'https://backend-klap.onrender.com';
 const cargando = document.getElementById('cargando');
 const errorCuenta = document.getElementById('errorCuenta');
 const contenido = document.getElementById('contenido');
-const opciones = document.getElementById('opciones');
-const redirigiendo = document.getElementById('redirigiendo');
+const generando = document.getElementById('generando');
 const pagoSection = document.getElementById('pagoSection');
 const pagoMsg = document.getElementById('pagoMsg');
+const reintentar = document.getElementById('reintentar');
+
+const params = new URLSearchParams(window.location.search);
+const dni = params.get('dni');
+const tienda = params.get('tienda');
 
 let cuentaActual = null;
-let scriptCargado = null; // promesa de carga de la librería (se carga una sola vez)
 
-function formatoCLP(valor) {
-  return valor.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+const LOCALES = { CLP: 'es-CL', PEN: 'es-PE' };
+const DECIMALES = { CLP: 0, PEN: 2 };
+
+function formatoMoneda(valor, moneda) {
+  return valor.toLocaleString(LOCALES[moneda] || 'es-CL', {
+    style: 'currency',
+    currency: moneda,
+    minimumFractionDigits: DECIMALES[moneda] ?? 0,
+    maximumFractionDigits: DECIMALES[moneda] ?? 0
+  });
 }
 
 // ---------- 1) Cargar el detalle de la cuenta ----------
 (async function init() {
-  const dni = new URLSearchParams(window.location.search).get('dni');
-  if (!dni) { window.location.replace('index.html'); return; }
+  if (!dni || !tienda) { window.location.replace('index.html'); return; }
 
   try {
     const r = await fetch(`${API_URL}/api/consulta-deuda`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dni })
+      body: JSON.stringify({ dni, tienda })
     });
     const data = await r.json();
 
@@ -42,8 +52,13 @@ function formatoCLP(valor) {
     document.getElementById('rDireccion').textContent = data.direccion;
     document.getElementById('rPeriodo').textContent = data.periodo;
     document.getElementById('rVencimiento').textContent = data.vencimiento;
-    document.getElementById('rMonto').textContent = formatoCLP(data.monto);
+    document.getElementById('rMonto').textContent = formatoMoneda(data.monto, data.moneda);
+    const medio = document.getElementById('rMedio');
+    medio.textContent = data.medioPago;
+    medio.classList.remove('d-none');
     contenido.classList.remove('d-none');
+
+    iniciarPago();
   } catch (err) {
     cargando.classList.add('d-none');
     errorCuenta.textContent = 'Error de conexión con el servidor.';
@@ -51,39 +66,12 @@ function formatoCLP(valor) {
   }
 })();
 
-// ---------- Helpers de visibilidad ----------
-function resetPago() {
-  opciones.classList.remove('d-none');
-  opciones.querySelectorAll('button').forEach((b) => (b.disabled = false));
-  redirigiendo.classList.add('d-none');
+// ---------- 2) Crear el pago y mostrar el formulario ----------
+async function iniciarPago() {
+  reintentar.classList.add('d-none');
+  pagoMsg.textContent = '';
+  generando.classList.remove('d-none');
   pagoSection.classList.add('d-none');
-  pagoSection.classList.remove('pago-oculto');
-  pagoSection.innerHTML = '';
-  if (window.KR && window.KR.removeForms) window.KR.removeForms().catch(() => {});
-}
-
-// Oculta visualmente el formulario pero lo mantiene con layout real (opacity:0),
-// para que el botón de Webpay se pueda presionar también en celulares y tablets
-function ocultarFormulario() {
-  pagoSection.classList.add('pago-oculto');
-  pagoSection.classList.remove('d-none');
-  redirigiendo.classList.remove('d-none');
-}
-
-function mostrarFormulario() {
-  pagoSection.classList.remove('pago-oculto', 'd-none');
-  redirigiendo.classList.add('d-none');
-}
-
-// ---------- 2) Elegir medio de pago (Mall o Plus) ----------
-opciones.addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-tienda]');
-  if (!btn || !cuentaActual) return;
-  const tienda = btn.dataset.tienda;
-
-  opciones.querySelectorAll('button').forEach((b) => (b.disabled = true));
-  pagoMsg.textContent = 'Generando pago…';
-  pagoMsg.className = 'form-text text-muted text-center mt-2';
 
   try {
     const [cfgRes, pagoRes] = await Promise.all([
@@ -101,15 +89,19 @@ opciones.addEventListener('click', async (e) => {
       throw new Error((pago && pago.error) || (cfg && cfg.error) || 'No se pudo iniciar el pago.');
     }
 
-    // Se ocultan los botones y aparece el formulario
-    opciones.classList.add('d-none');
-    pagoMsg.textContent = '';
-    await montarFormularioPago(cfg, pago.formToken, tienda);
+    await montarFormularioPago(cfg, pago.formToken);
+    generando.classList.add('d-none');
   } catch (err) {
+    generando.classList.add('d-none');
     pagoMsg.textContent = err.message || 'Error al conectar con el servidor de pago.';
-    pagoMsg.className = 'form-text text-danger text-center mt-2';
-    resetPago();
+    reintentar.classList.remove('d-none');
   }
+}
+
+document.getElementById('btnReintentar').addEventListener('click', () => {
+  pagoSection.innerHTML = '';
+  if (window.KR && window.KR.removeForms) window.KR.removeForms().catch(() => {});
+  iniciarPago();
 });
 
 function cargarScript(src, atributos = {}) {
@@ -123,8 +115,7 @@ function cargarScript(src, atributos = {}) {
   });
 }
 
-// La librería y el tema se cargan una sola vez; la clave pública de cada tienda
-// se indica después con KR.setFormConfig
+let scriptCargado = null; // la librería se carga una sola vez
 function cargarKrypton(cfg) {
   if (scriptCargado) return scriptCargado;
 
@@ -140,55 +131,12 @@ function cargarKrypton(cfg) {
   return scriptCargado;
 }
 
-// ---------- Auto-selección de Webpay ----------
-// Solo considera elementos que mencionen Webpay en sus atributos, clases, texto o imágenes;
-// nunca el botón de tarjeta. Si hay varios anidados, toma el más interno.
-const RE_WEBPAY = /webpay|transbank/i;
-
-function buscarBotonWebpay(contenedor) {
-  const candidatos = Array.from(
-    contenedor.querySelectorAll('button, a, [role="button"], [kr-payment-method], .kr-payment-button, .kr-smart-button')
-  ).filter((el) => !el.disabled && el.getAttribute('aria-disabled') !== 'true');
-
-  const coinciden = candidatos.filter((el) => RE_WEBPAY.test(el.outerHTML));
-  if (!coinciden.length) return null;
-
-  coinciden.sort((a, b) => a.outerHTML.length - b.outerHTML.length);
-  return coinciden[0];
-}
-
-// Espera (hasta 20 s: en celulares carga más lento) y presiona el botón de Webpay una sola vez
-function autoPresionarWebpay(contenedor, timeoutMs = 20000) {
-  return new Promise((resolve) => {
-    const inicio = Date.now();
-
-    const revisar = () => {
-      const boton = buscarBotonWebpay(contenedor);
-      if (boton) {
-        console.log('[Webpay] Botón encontrado, presionando:', boton);
-        boton.click();
-        return resolve(true);
-      }
-      if (Date.now() - inicio >= timeoutMs) {
-        console.warn('[Webpay] No se encontró el botón. HTML del formulario:\n', contenedor.innerHTML);
-        return resolve(false);
-      }
-      setTimeout(revisar, 200);
-    };
-
-    revisar();
-  });
-}
-
-async function montarFormularioPago(cfg, formToken, tienda) {
+async function montarFormularioPago(cfg, formToken) {
   // PayZen hace POST al backend (un sitio estático no puede recibirlo)
   const retorno = `${API_URL}/retorno-pago`;
-  const autoPagar = tienda === 'plus';
 
   pagoSection.innerHTML = '<div id="krForm" class="kr-smart-form" kr-card-form-expanded></div>';
-
-  if (autoPagar) ocultarFormulario();
-  else mostrarFormulario();
+  pagoSection.classList.remove('d-none');
 
   await cargarKrypton(cfg);
 
@@ -200,24 +148,4 @@ async function montarFormularioPago(cfg, formToken, tienda) {
     'kr-language': 'es-ES',
     formToken
   });
-
-  if (autoPagar) {
-    const ok = await autoPresionarWebpay(pagoSection);
-    if (!ok) {
-      // No se encontró el botón: se muestra el formulario para pagar manualmente
-      mostrarFormulario();
-      pagoMsg.textContent = 'Presiona la opción de Webpay para continuar con el pago.';
-      pagoMsg.className = 'form-text text-muted text-center mt-2';
-      return;
-    }
-
-    // Si tras presionar no hubo redirección, se muestra el formulario como respaldo
-    setTimeout(() => {
-      if (document.visibilityState === 'visible' && pagoSection.classList.contains('pago-oculto')) {
-        mostrarFormulario();
-        pagoMsg.textContent = 'Si no fuiste redirigido, presiona la opción de Webpay.';
-        pagoMsg.className = 'form-text text-muted text-center mt-2';
-      }
-    }, 7000);
-  }
 }
