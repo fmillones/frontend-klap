@@ -56,11 +56,6 @@
     .hero-text h2{ font-size:2rem; }
     .pago-facil{ position:static; width:100%; border-radius:24px; }
   }
-
-  /* Popup de pago */
-  .btn-continuar{ background:var(--navy); color:#fff; font-weight:800; padding:.9rem 1rem; border-radius:12px; }
-  .btn-continuar:hover{ background:#081338; color:#fff; }
-  .monto{ font-size:2rem; font-weight:800; color:var(--navy); }
 </style>
 </head>
 <body>
@@ -116,42 +111,6 @@
   </section>
 </main>
 
-<!-- Popup de pago -->
-<div class="modal fade" id="modalPago" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title h5">Detalle de tu cuenta</h2>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <dl class="row mb-3">
-          <dt class="col-5">Cliente</dt><dd class="col-7" id="rNombre"></dd>
-          <dt class="col-5">Documento</dt><dd class="col-7" id="rDocumento"></dd>
-          <dt class="col-5">Dirección</dt><dd class="col-7" id="rDireccion"></dd>
-          <dt class="col-5">Período</dt><dd class="col-7" id="rPeriodo"></dd>
-          <dt class="col-5">Vencimiento</dt><dd class="col-7" id="rVencimiento"></dd>
-          <dt class="col-5">Medio de pago</dt><dd class="col-7" id="rMedio"></dd>
-        </dl>
-        <div class="border-top pt-3 mb-3">
-          <div class="text-muted small">Total a pagar</div>
-          <div class="monto" id="rMonto"></div>
-        </div>
-
-        <!-- Paso 1: confirmar el pago (se oculta al presionar) -->
-        <div id="accionPago" class="d-grid">
-          <button type="button" class="btn btn-continuar" id="btnPagar">Pagar</button>
-        </div>
-
-        <!-- Paso 2: formulario embebido -->
-        <div id="pagoSection" class="d-none"></div>
-        <div id="pagoMsg" class="form-text text-danger mt-2"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="gas.js"></script>
 </body>
 </html>
