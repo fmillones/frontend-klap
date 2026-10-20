@@ -1,5 +1,5 @@
 // URL del backend. En local apunta a localhost:3000; en producción, a tu servicio de Render.
-const API_URL = 'https://backend-gas-xx35.onrender.com';
+const API_URL = 'https://backend-klap.onrender.com';
 
 const consultaForm = document.getElementById('consultaForm');
 const consultaMsg = document.getElementById('consultaMsg');
